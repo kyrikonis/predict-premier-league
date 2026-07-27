@@ -40,18 +40,24 @@ each scoreline, and earn points on a season-long leaderboard:
 
 The site won't have any fixtures until the fixture-selection job runs once (see below).
 
-## The two scheduled jobs
+## The three scheduled jobs
 
-- `POST /api/cron/select-fixtures` — picks the next matchweek's 6 Saturday/Sunday fixtures.
-  Runs automatically every Tuesday via `vercel.json`. To trigger manually while testing:
+- `POST /api/cron/select-fixtures` — finds the next Premier League matchday that has games
+  (searching up to 45 days ahead, so it works even across pre-season/international-break gaps)
+  and picks 6 of its Saturday/Sunday fixtures (widening to Friday/Monday if fewer than 6 fall on
+  the weekend). Only runs if there's no active (non-complete) round already. Runs automatically
+  every Tuesday via `vercel.json`. To trigger manually while testing:
   ```bash
   curl -X POST http://localhost:3000/api/cron/select-fixtures \
     -H "Authorization: Bearer $CRON_SECRET"
   ```
+- `POST /api/cron/sync-fixtures` — re-checks the current round's not-yet-finished fixtures against
+  football-data.org daily, updating kickoff times and postponed status if a fixture gets
+  rearranged after it was selected. Runs automatically every day.
 - `POST /api/cron/update-results` — fetches final scores for the current round and awards points.
   Runs automatically every Monday. Trigger manually the same way, swapping the path.
 
-Both routes reject requests without the correct `Authorization: Bearer <CRON_SECRET>` header.
+All three routes reject requests without the correct `Authorization: Bearer <CRON_SECRET>` header.
 
 ## Deploying to Vercel
 
@@ -62,7 +68,7 @@ Both routes reject requests without the correct `Authorization: Bearer <CRON_SEC
    `FOOTBALL_DATA_API_KEY`, `SESSION_SECRET`, `CRON_SECRET`.
 4. Deploy. The `build` script runs `prisma migrate deploy` automatically before `next build`, so
    the production database schema is created/updated on every deploy — no manual migration step.
-   `vercel.json` registers the two cron schedules automatically too.
+   `vercel.json` registers all three cron schedules automatically too.
 5. After the first deploy, manually curl both cron routes once (with the real `CRON_SECRET`) to
    confirm they write to the production database before relying on the schedule.
 
