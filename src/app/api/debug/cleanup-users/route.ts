@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-const USERNAMES_TO_REMOVE = ["Dad"];
+const USERNAMES_TO_REMOVE = ["Dad", "FinalCheck"];
 
 function isAuthorized(req: NextRequest): boolean {
   return req.headers.get("authorization") === `Bearer ${process.env.CRON_SECRET}`;
