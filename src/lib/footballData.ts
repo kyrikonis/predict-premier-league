@@ -5,8 +5,8 @@ export interface FootballDataMatch {
   utcDate: string;
   status: "SCHEDULED" | "TIMED" | "IN_PLAY" | "PAUSED" | "FINISHED" | "POSTPONED" | "SUSPENDED" | "CANCELLED";
   matchday: number | null;
-  homeTeam: { name: string };
-  awayTeam: { name: string };
+  homeTeam: { name: string; shortName: string | null; crest: string | null };
+  awayTeam: { name: string; shortName: string | null; crest: string | null };
   score: {
     fullTime: { home: number | null; away: number | null };
   };

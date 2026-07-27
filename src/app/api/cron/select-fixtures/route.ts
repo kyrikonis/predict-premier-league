@@ -74,7 +74,11 @@ export async function POST(req: NextRequest) {
         create: selected.map((m) => ({
           externalId: m.id,
           homeTeam: m.homeTeam.name,
+          homeShortName: m.homeTeam.shortName,
+          homeCrest: m.homeTeam.crest,
           awayTeam: m.awayTeam.name,
+          awayShortName: m.awayTeam.shortName,
+          awayCrest: m.awayTeam.crest,
           kickoff: new Date(m.utcDate),
           status: "SCHEDULED",
         })),

@@ -39,17 +39,21 @@ model Round {
 }
 
 model Fixture {
-  id          String        @id @default(cuid())
-  roundId     String
-  round       Round         @relation(fields: [roundId], references: [id])
-  externalId  Int           @unique
-  homeTeam    String
-  awayTeam    String
-  kickoff     DateTime
-  homeScore   Int?
-  awayScore   Int?
-  status      FixtureStatus @default(SCHEDULED)
-  predictions Prediction[]
+  id            String        @id @default(cuid())
+  roundId       String
+  round         Round         @relation(fields: [roundId], references: [id])
+  externalId    Int           @unique
+  homeTeam      String
+  homeShortName String?
+  homeCrest     String?
+  awayTeam      String
+  awayShortName String?
+  awayCrest     String?
+  kickoff       DateTime
+  homeScore     Int?
+  awayScore     Int?
+  status        FixtureStatus @default(SCHEDULED)
+  predictions   Prediction[]
 
   @@index([roundId])
 }

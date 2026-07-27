@@ -10,13 +10,17 @@ export default async function Home() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-8">
-      <h1 className="text-2xl font-bold">Predict Premier League</h1>
-      <p className="max-w-sm text-center text-sm text-black/70 dark:text-white/70">
-        Predict the scores for 6 Premier League games every matchweek. 3 points for an exact score, 1 point for the
-        correct result.
-      </p>
-      <UsernameForm />
+    <main className="flex min-h-screen flex-col items-center justify-center p-8">
+      <div className="flex w-full max-w-sm flex-col items-center gap-6 rounded-2xl border border-black/10 p-8 shadow-sm dark:border-white/10">
+        <div className="flex flex-col items-center gap-2 text-center">
+          <h1 className="text-2xl font-bold">Predict Premier League</h1>
+          <p className="text-sm text-black/60 dark:text-white/60">
+            Predict 6 Premier League scores every matchweek. Exact score = 3 points, correct
+            result = 1 point.
+          </p>
+        </div>
+        <UsernameForm />
+      </div>
     </main>
   );
 }

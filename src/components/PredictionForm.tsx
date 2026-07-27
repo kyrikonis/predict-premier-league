@@ -2,11 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { TeamBadge } from "@/components/TeamBadge";
+
+export interface TeamView {
+  name: string;
+  shortName: string | null;
+  crest: string | null;
+}
 
 export interface FixtureView {
   id: string;
-  homeTeam: string;
-  awayTeam: string;
+  home: TeamView;
+  away: TeamView;
   kickoff: string;
   locked: boolean;
   predictedHome: number | null;
@@ -23,7 +30,7 @@ export function PredictionForm({ fixtures }: { fixtures: FixtureView[] }) {
       ])
     )
   );
-  const [status, setStatus] = useState<string | null>(null);
+  const [status, setStatus] = useState<{ kind: "success" | "error"; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   function updateScore(fixtureId: string, side: "home" | "away", value: string) {
@@ -54,11 +61,11 @@ export function PredictionForm({ fixtures }: { fixtures: FixtureView[] }) {
     setSubmitting(false);
 
     if (!res.ok) {
-      setStatus(data?.error ?? "Something went wrong saving your predictions.");
+      setStatus({ kind: "error", message: data?.error ?? "Something went wrong saving your predictions." });
       return;
     }
 
-    setStatus(`Saved ${data.saved} prediction${data.saved === 1 ? "" : "s"}.`);
+    setStatus({ kind: "success", message: `Saved ${data.saved} prediction${data.saved === 1 ? "" : "s"}.` });
     router.refresh();
   }
 
@@ -68,50 +75,73 @@ export function PredictionForm({ fixtures }: { fixtures: FixtureView[] }) {
         {fixtures.map((fixture) => (
           <div
             key={fixture.id}
-            className="flex items-center justify-between gap-4 rounded-md border border-black/10 p-4 dark:border-white/10"
+            className={`rounded-xl border border-black/10 bg-black/[0.015] p-4 transition dark:border-white/10 dark:bg-white/[0.03] ${
+              fixture.locked ? "opacity-60" : ""
+            }`}
           >
-            <div className="flex flex-1 flex-col">
-              <span className="font-medium">
-                {fixture.homeTeam} vs {fixture.awayTeam}
-              </span>
-              <span className="text-xs text-black/50 dark:text-white/50">
+            <div className="mb-3 flex items-center justify-between text-xs text-black/50 dark:text-white/50">
+              <span>
                 {new Date(fixture.kickoff).toLocaleString(undefined, {
                   weekday: "short",
+                  day: "numeric",
+                  month: "short",
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
-                {fixture.locked ? " — locked" : ""}
               </span>
+              {fixture.locked && (
+                <span className="rounded-full bg-black/10 px-2 py-0.5 font-medium text-black/60 dark:bg-white/10 dark:text-white/60">
+                  Locked
+                </span>
+              )}
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                min={0}
-                max={99}
-                disabled={fixture.locked}
-                value={scores[fixture.id]?.home ?? ""}
-                onChange={(e) => updateScore(fixture.id, "home", e.target.value)}
-                className="w-14 rounded-md border border-black/10 bg-white px-2 py-1 text-center text-black disabled:opacity-50 dark:border-white/20 dark:bg-black dark:text-white"
-              />
-              <span>-</span>
-              <input
-                type="number"
-                min={0}
-                max={99}
-                disabled={fixture.locked}
-                value={scores[fixture.id]?.away ?? ""}
-                onChange={(e) => updateScore(fixture.id, "away", e.target.value)}
-                className="w-14 rounded-md border border-black/10 bg-white px-2 py-1 text-center text-black disabled:opacity-50 dark:border-white/20 dark:bg-black dark:text-white"
-              />
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-1 justify-center">
+                <TeamBadge {...fixture.home} />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  max={99}
+                  disabled={fixture.locked}
+                  value={scores[fixture.id]?.home ?? ""}
+                  onChange={(e) => updateScore(fixture.id, "home", e.target.value)}
+                  className="h-11 w-11 rounded-lg border border-black/15 bg-white text-center text-lg font-semibold text-black outline-none focus:border-emerald-500 disabled:opacity-50 dark:border-white/15 dark:bg-black dark:text-white"
+                />
+                <span className="text-black/30 dark:text-white/30">–</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={99}
+                  disabled={fixture.locked}
+                  value={scores[fixture.id]?.away ?? ""}
+                  onChange={(e) => updateScore(fixture.id, "away", e.target.value)}
+                  className="h-11 w-11 rounded-lg border border-black/15 bg-white text-center text-lg font-semibold text-black outline-none focus:border-emerald-500 disabled:opacity-50 dark:border-white/15 dark:bg-black dark:text-white"
+                />
+              </div>
+              <div className="flex flex-1 justify-center">
+                <TeamBadge {...fixture.away} />
+              </div>
             </div>
           </div>
         ))}
       </div>
-      {status && <p className="text-sm">{status}</p>}
+      {status && (
+        <p
+          className={`rounded-lg px-3 py-2 text-sm ${
+            status.kind === "success"
+              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
+              : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"
+          }`}
+        >
+          {status.message}
+        </p>
+      )}
       <button
         type="submit"
         disabled={submitting || fixtures.every((f) => f.locked)}
-        className="self-start rounded-md bg-foreground px-4 py-2 font-medium text-background disabled:opacity-50"
+        className="self-start rounded-lg bg-emerald-600 px-5 py-2.5 font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50"
       >
         {submitting ? "Saving..." : "Save predictions"}
       </button>

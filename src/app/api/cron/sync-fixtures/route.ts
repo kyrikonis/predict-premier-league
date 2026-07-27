@@ -13,7 +13,8 @@ function isAuthorized(req: NextRequest): boolean {
  * Fixtures can be rearranged (for TV, postponement, etc.) after we've already selected them
  * for a round. This re-checks the current round's not-yet-finished fixtures daily and updates
  * kickoff times / postponed status to match football-data.org, so prediction locking always
- * reflects the real kickoff time.
+ * reflects the real kickoff time. It also backfills crest/short-name fields when missing (e.g.
+ * for fixtures selected before those columns existed).
  */
 export async function POST(req: NextRequest) {
   if (!isAuthorized(req)) {
@@ -51,12 +52,20 @@ export async function POST(req: NextRequest) {
 
     const newKickoff = new Date(match.utcDate);
     const newStatus = ["POSTPONED", "SUSPENDED", "CANCELLED"].includes(match.status) ? "POSTPONED" : "SCHEDULED";
-    const changed = newKickoff.getTime() !== fixture.kickoff.getTime() || fixture.status !== newStatus;
+    const crestsMissing = !fixture.homeCrest || !fixture.awayCrest;
+    const changed = newKickoff.getTime() !== fixture.kickoff.getTime() || fixture.status !== newStatus || crestsMissing;
 
     if (changed) {
       await prisma.fixture.update({
         where: { id: fixture.id },
-        data: { kickoff: newKickoff, status: newStatus },
+        data: {
+          kickoff: newKickoff,
+          status: newStatus,
+          homeShortName: match.homeTeam.shortName,
+          homeCrest: match.homeTeam.crest,
+          awayShortName: match.awayTeam.shortName,
+          awayCrest: match.awayTeam.crest,
+        },
       });
       updated++;
     }
