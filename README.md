@@ -60,10 +60,10 @@ Both routes reject requests without the correct `Authorization: Bearer <CRON_SEC
    This auto-populates `DATABASE_URL` as a project environment variable.
 3. Add the remaining environment variables in the Vercel project settings:
    `FOOTBALL_DATA_API_KEY`, `SESSION_SECRET`, `CRON_SECRET`.
-4. Run the migration against the production database once (e.g. locally with `DATABASE_URL`
-   pointed at production, or via `npx prisma migrate deploy` in a Vercel build step).
-5. Deploy. `vercel.json` registers the two cron schedules automatically — no extra setup needed.
-6. After the first deploy, manually curl both cron routes once (with the real `CRON_SECRET`) to
+4. Deploy. The `build` script runs `prisma migrate deploy` automatically before `next build`, so
+   the production database schema is created/updated on every deploy — no manual migration step.
+   `vercel.json` registers the two cron schedules automatically too.
+5. After the first deploy, manually curl both cron routes once (with the real `CRON_SECRET`) to
    confirm they write to the production database before relying on the schedule.
 
 ## Known limitation: username-only auth
