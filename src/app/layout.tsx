@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Super Six",
+  title: "Predict Premier League",
   description: "Predict Premier League scores every matchweek.",
 };
 

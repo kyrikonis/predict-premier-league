@@ -1,4 +1,4 @@
-# Super Six
+# Predict Premier League
 
 A Premier League score-prediction game. Every matchweek, 6 Saturday/Sunday Premier League
 games are picked automatically. Players register with a username only (no password), predict
@@ -18,14 +18,14 @@ each scoreline, and earn points on a season-long leaderboard:
    ```bash
    brew install postgresql@16
    LC_ALL="en_US.UTF-8" /opt/homebrew/opt/postgresql@16/bin/pg_ctl -D /opt/homebrew/var/postgresql@16 -l /tmp/pg16.log -o "-p 5433" start
-   /opt/homebrew/opt/postgresql@16/bin/createdb -h localhost -p 5433 supersix
+   /opt/homebrew/opt/postgresql@16/bin/createdb -h localhost -p 5433 predictpl
    ```
    (The `LC_ALL` env var works around a Homebrew Postgres 16 startup bug on some Macs — omit it
    if your `pg_ctl start` works without it. `npx prisma dev`, Prisma's own ephemeral local
    database, is an alternative but was unreliable in testing — the brew-installed server above is
    the tested path.)
 4. **Copy `.env.example` to `.env`** and fill in:
-   - `DATABASE_URL` — e.g. `postgresql://localhost:5433/supersix` for the local setup above
+   - `DATABASE_URL` — e.g. `postgresql://localhost:5433/predictpl` for the local setup above
    - `FOOTBALL_DATA_API_KEY` — your football-data.org token
    - `SESSION_SECRET` — any random 32+ character string
    - `CRON_SECRET` — any random string (used to authenticate the two scheduled jobs below)
