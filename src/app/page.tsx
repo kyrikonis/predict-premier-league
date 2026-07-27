@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { UsernameForm } from "@/components/UsernameForm";
+import { AuthForm } from "@/components/AuthForm";
 
 export default async function Home() {
   const session = await getSession();
@@ -19,7 +19,7 @@ export default async function Home() {
             result = 1 point.
           </p>
         </div>
-        <UsernameForm />
+        <AuthForm />
       </div>
     </main>
   );

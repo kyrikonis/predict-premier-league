@@ -1,8 +1,8 @@
 # Predict Premier League
 
 A Premier League score-prediction game. Every matchweek, 6 fixtures are picked automatically.
-Players register with a username only (no password), predict each scoreline, and earn points on
-a season-long leaderboard:
+Players sign up with a username and password (no email), predict each scoreline, and earn points
+on a season-long leaderboard:
 
 - **Exact score** → 3 points
 - **Correct result** (right winner or draw, wrong scoreline) → 1 point
@@ -30,5 +30,6 @@ All three require an `Authorization: Bearer <CRON_SECRET>` header.
 
 ## Known limitation
 
-There's no password — anyone who knows a username can act as that user. This is an intentional
-trade-off for a small, casual-scale game.
+There's no email on file and no password reset flow — if a password is forgotten, that account is
+unrecoverable (the sign-up form warns about this). Intentional trade-off for a small, casual-scale
+game rather than adding email-based recovery.
