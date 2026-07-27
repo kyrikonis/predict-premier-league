@@ -34,7 +34,22 @@ export async function POST(req: NextRequest) {
   });
   const fixtureById = new Map(fixtures.map((f) => [f.id, f]));
 
-  const now = new Date();
+  // Predictions lock for the whole round as soon as its first fixture kicks off, not just the
+  // individual fixture being edited — so we need every round's earliest kickoff, not just the
+  // kickoff of the fixtures being submitted right now.
+  const roundIds = [...new Set(fixtures.map((f) => f.roundId))];
+  const roundFixtures = await prisma.fixture.findMany({
+    where: { roundId: { in: roundIds } },
+    select: { roundId: true, kickoff: true },
+  });
+  const earliestKickoffByRound = new Map<string, number>();
+  for (const f of roundFixtures) {
+    const t = f.kickoff.getTime();
+    const current = earliestKickoffByRound.get(f.roundId);
+    if (current === undefined || t < current) earliestKickoffByRound.set(f.roundId, t);
+  }
+
+  const now = Date.now();
   let saved = 0;
   let locked = 0;
 
@@ -42,7 +57,8 @@ export async function POST(req: NextRequest) {
     const fixture = fixtureById.get(p.fixtureId);
     if (!fixture) continue;
 
-    if (now >= fixture.kickoff) {
+    const roundLocksAt = earliestKickoffByRound.get(fixture.roundId);
+    if (roundLocksAt !== undefined && now >= roundLocksAt) {
       locked++;
       continue;
     }

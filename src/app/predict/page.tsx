@@ -82,6 +82,11 @@ export default async function PredictPage() {
   // not a stale/impure render (the purity rule is written for client re-renders).
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
+  // Predictions for the whole matchweek lock as soon as its first fixture kicks off — not each
+  // fixture individually — so latecomers can't adjust remaining picks with partial info.
+  const earliestKickoff = Math.min(...round.fixtures.map((f) => f.kickoff.getTime()));
+  const roundLocked = now >= earliestKickoff;
+
   const fixtures: FixtureView[] = round.fixtures.map((fixture) => {
     const prediction = fixture.predictions[0];
     return {
@@ -89,7 +94,7 @@ export default async function PredictPage() {
       home: { name: fixture.homeTeam, shortName: fixture.homeShortName, crest: fixture.homeCrest },
       away: { name: fixture.awayTeam, shortName: fixture.awayShortName, crest: fixture.awayCrest },
       kickoff: fixture.kickoff.toISOString(),
-      locked: fixture.kickoff.getTime() <= now,
+      locked: roundLocked,
       predictedHome: prediction?.predictedHome ?? null,
       predictedAway: prediction?.predictedAway ?? null,
     };
@@ -98,9 +103,20 @@ export default async function PredictPage() {
   return (
     <main className="mx-auto max-w-2xl p-8">
       <h1 className="mb-1 text-xl font-bold">{round.label}</h1>
-      <p className="mb-6 text-sm text-black/60 dark:text-white/60">
+      <p className="mb-4 text-sm text-black/60 dark:text-white/60">
         Predict each score before kickoff. Exact score = 3 points, correct result = 1 point.
       </p>
+      {roundLocked && (
+        <p className="mb-6 rounded-lg bg-black/5 px-3 py-2 text-sm font-medium dark:bg-white/10">
+          Predictions are closed for {round.label} — the first game kicked off at{" "}
+          {new Date(earliestKickoff).toLocaleString(undefined, {
+            weekday: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+          .
+        </p>
+      )}
       <PredictionForm fixtures={fixtures} />
     </main>
   );
