@@ -67,6 +67,7 @@ model Prediction {
   fixture       Fixture  @relation(fields: [fixtureId], references: [id])
   predictedHome Int
   predictedAway Int
+  isWildcard    Boolean  @default(false)
   pointsAwarded Int?
   updatedAt     DateTime @updatedAt @db.Timestamptz(3)
 

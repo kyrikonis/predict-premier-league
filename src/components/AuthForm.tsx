@@ -84,7 +84,6 @@ export function AuthForm() {
             autoFocus
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder="e.g. Dad"
             className="rounded-lg border border-black/15 bg-white px-3 py-2.5 text-black outline-none transition focus:border-emerald-500 dark:border-white/15 dark:bg-black dark:text-white"
           />
         </div>

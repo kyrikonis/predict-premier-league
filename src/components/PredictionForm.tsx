@@ -18,6 +18,7 @@ export interface FixtureView {
   locked: boolean;
   predictedHome: number | null;
   predictedAway: number | null;
+  isWildcard: boolean;
 }
 
 export function PredictionForm({ fixtures }: { fixtures: FixtureView[] }) {
@@ -30,11 +31,18 @@ export function PredictionForm({ fixtures }: { fixtures: FixtureView[] }) {
       ])
     )
   );
+  const [wildcardFixtureId, setWildcardFixtureId] = useState<string | null>(
+    fixtures.find((f) => f.isWildcard)?.id ?? null
+  );
   const [status, setStatus] = useState<{ kind: "success" | "error"; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   function updateScore(fixtureId: string, side: "home" | "away", value: string) {
     setScores((prev) => ({ ...prev, [fixtureId]: { ...prev[fixtureId], [side]: value } }));
+  }
+
+  function toggleWildcard(fixtureId: string) {
+    setWildcardFixtureId((prev) => (prev === fixtureId ? null : fixtureId));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -54,7 +62,7 @@ export function PredictionForm({ fixtures }: { fixtures: FixtureView[] }) {
     const res = await fetch("/api/predictions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ predictions }),
+      body: JSON.stringify({ predictions, wildcardFixtureId }),
     });
 
     const data = await res.json().catch(() => null);
@@ -72,60 +80,79 @@ export function PredictionForm({ fixtures }: { fixtures: FixtureView[] }) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-3">
-        {fixtures.map((fixture) => (
-          <div
-            key={fixture.id}
-            className={`rounded-xl border border-black/10 bg-black/[0.015] p-4 transition dark:border-white/10 dark:bg-white/[0.03] ${
-              fixture.locked ? "opacity-60" : ""
-            }`}
-          >
-            <div className="mb-3 flex items-center justify-between text-xs text-black/50 dark:text-white/50">
-              <span>
-                {new Date(fixture.kickoff).toLocaleString(undefined, {
-                  weekday: "short",
-                  day: "numeric",
-                  month: "short",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-              {fixture.locked && (
-                <span className="rounded-full bg-black/10 px-2 py-0.5 font-medium text-black/60 dark:bg-white/10 dark:text-white/60">
-                  Locked
+        {fixtures.map((fixture) => {
+          const isWildcard = wildcardFixtureId === fixture.id;
+          return (
+            <div
+              key={fixture.id}
+              className={`rounded-xl border p-4 transition ${
+                isWildcard
+                  ? "border-amber-400 bg-amber-50 dark:border-amber-500/60 dark:bg-amber-500/10"
+                  : "border-black/10 bg-black/[0.015] dark:border-white/10 dark:bg-white/[0.03]"
+              } ${fixture.locked ? "opacity-60" : ""}`}
+            >
+              <div className="mb-3 flex items-center justify-between text-xs text-black/50 dark:text-white/50">
+                <span>
+                  {new Date(fixture.kickoff).toLocaleString(undefined, {
+                    weekday: "short",
+                    day: "numeric",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </span>
-              )}
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex flex-1 justify-center">
-                <TeamBadge {...fixture.home} />
+                {fixture.locked && (
+                  <span className="rounded-full bg-black/10 px-2 py-0.5 font-medium text-black/60 dark:bg-white/10 dark:text-white/60">
+                    Locked
+                  </span>
+                )}
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min={0}
-                  max={99}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-1 justify-center">
+                  <TeamBadge {...fixture.home} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    max={99}
+                    disabled={fixture.locked}
+                    value={scores[fixture.id]?.home ?? ""}
+                    onChange={(e) => updateScore(fixture.id, "home", e.target.value)}
+                    className="h-11 w-11 rounded-lg border border-black/15 bg-white text-center text-lg font-semibold text-black outline-none focus:border-emerald-500 disabled:opacity-50 dark:border-white/15 dark:bg-black dark:text-white"
+                  />
+                  <span className="text-black/30 dark:text-white/30">–</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={99}
+                    disabled={fixture.locked}
+                    value={scores[fixture.id]?.away ?? ""}
+                    onChange={(e) => updateScore(fixture.id, "away", e.target.value)}
+                    className="h-11 w-11 rounded-lg border border-black/15 bg-white text-center text-lg font-semibold text-black outline-none focus:border-emerald-500 disabled:opacity-50 dark:border-white/15 dark:bg-black dark:text-white"
+                  />
+                </div>
+                <div className="flex flex-1 justify-center">
+                  <TeamBadge {...fixture.away} />
+                </div>
+              </div>
+              <div className="mt-3 flex justify-center">
+                <button
+                  type="button"
                   disabled={fixture.locked}
-                  value={scores[fixture.id]?.home ?? ""}
-                  onChange={(e) => updateScore(fixture.id, "home", e.target.value)}
-                  className="h-11 w-11 rounded-lg border border-black/15 bg-white text-center text-lg font-semibold text-black outline-none focus:border-emerald-500 disabled:opacity-50 dark:border-white/15 dark:bg-black dark:text-white"
-                />
-                <span className="text-black/30 dark:text-white/30">–</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={99}
-                  disabled={fixture.locked}
-                  value={scores[fixture.id]?.away ?? ""}
-                  onChange={(e) => updateScore(fixture.id, "away", e.target.value)}
-                  className="h-11 w-11 rounded-lg border border-black/15 bg-white text-center text-lg font-semibold text-black outline-none focus:border-emerald-500 disabled:opacity-50 dark:border-white/15 dark:bg-black dark:text-white"
-                />
-              </div>
-              <div className="flex flex-1 justify-center">
-                <TeamBadge {...fixture.away} />
+                  onClick={() => toggleWildcard(fixture.id)}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold transition disabled:opacity-50 ${
+                    isWildcard
+                      ? "bg-amber-400 text-amber-950"
+                      : "bg-black/5 text-black/50 hover:bg-black/10 dark:bg-white/10 dark:text-white/50 dark:hover:bg-white/20"
+                  }`}
+                >
+                  {isWildcard ? "Wildcard active — double points" : "Use wildcard here"}
+                </button>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       {status && (
         <p

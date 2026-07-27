@@ -55,7 +55,13 @@ export async function POST(req: NextRequest) {
       });
 
       for (const prediction of fixture.predictions) {
-        const points = scorePrediction(prediction.predictedHome, prediction.predictedAway, home, away);
+        const points = scorePrediction(
+          prediction.predictedHome,
+          prediction.predictedAway,
+          home,
+          away,
+          prediction.isWildcard
+        );
         await prisma.prediction.update({ where: { id: prediction.id }, data: { pointsAwarded: points } });
       }
 

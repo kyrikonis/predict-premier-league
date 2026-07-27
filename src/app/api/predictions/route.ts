@@ -20,27 +20,29 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => null);
   const inputs: PredictionInput[] = Array.isArray(body?.predictions) ? body.predictions : [];
+  const wildcardFixtureId: string | null = typeof body?.wildcardFixtureId === "string" ? body.wildcardFixtureId : null;
 
   const valid = inputs.filter(
     (p) => typeof p?.fixtureId === "string" && isValidScore(p.predictedHome) && isValidScore(p.predictedAway)
   );
 
-  if (valid.length === 0) {
+  if (valid.length === 0 && !wildcardFixtureId) {
     return NextResponse.json({ error: "No valid predictions submitted" }, { status: 400 });
   }
 
-  const fixtures = await prisma.fixture.findMany({
-    where: { id: { in: valid.map((p) => p.fixtureId) } },
-  });
+  const fixtureIdsToLoad = new Set(valid.map((p) => p.fixtureId));
+  if (wildcardFixtureId) fixtureIdsToLoad.add(wildcardFixtureId);
+
+  const fixtures = await prisma.fixture.findMany({ where: { id: { in: [...fixtureIdsToLoad] } } });
   const fixtureById = new Map(fixtures.map((f) => [f.id, f]));
 
-  // Predictions lock for the whole round as soon as its first fixture kicks off, not just the
-  // individual fixture being edited — so we need every round's earliest kickoff, not just the
-  // kickoff of the fixtures being submitted right now.
+  // Predictions (and the wildcard pick) lock for the whole round as soon as its first fixture
+  // kicks off, not just the individual fixture being edited — so we need every round's earliest
+  // kickoff, not just the kickoff of the fixtures being submitted right now.
   const roundIds = [...new Set(fixtures.map((f) => f.roundId))];
   const roundFixtures = await prisma.fixture.findMany({
     where: { roundId: { in: roundIds } },
-    select: { roundId: true, kickoff: true },
+    select: { id: true, roundId: true, kickoff: true },
   });
   const earliestKickoffByRound = new Map<string, number>();
   for (const f of roundFixtures) {
@@ -76,5 +78,28 @@ export async function POST(req: NextRequest) {
     saved++;
   }
 
-  return NextResponse.json({ saved, locked });
+  // Only one wildcard per round: clear it on every other fixture in that round before (or
+  // instead of) setting the new one. A missing/null wildcardFixtureId means "no wildcard this
+  // round" and clears whatever was previously selected.
+  let wildcardSaved = false;
+  for (const roundId of roundIds) {
+    const roundLocksAt = earliestKickoffByRound.get(roundId);
+    if (roundLocksAt !== undefined && now >= roundLocksAt) continue;
+
+    const siblingIds = roundFixtures.filter((f) => f.roundId === roundId).map((f) => f.id);
+    await prisma.prediction.updateMany({
+      where: { userId: session.userId, fixtureId: { in: siblingIds } },
+      data: { isWildcard: false },
+    });
+
+    if (wildcardFixtureId && fixtureById.get(wildcardFixtureId)?.roundId === roundId) {
+      const result = await prisma.prediction.updateMany({
+        where: { userId: session.userId, fixtureId: wildcardFixtureId },
+        data: { isWildcard: true },
+      });
+      wildcardSaved = result.count > 0;
+    }
+  }
+
+  return NextResponse.json({ saved, locked, wildcardSaved });
 }

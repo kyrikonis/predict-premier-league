@@ -43,12 +43,17 @@ export default async function PredictPage() {
           {round.fixtures.map((fixture) => {
             const prediction = fixture.predictions[0];
             const points = prediction?.pointsAwarded ?? 0;
-            const pointsStyle =
-              points === 3
-                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
-                : points === 1
-                  ? "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400"
-                  : "bg-black/5 text-black/50 dark:bg-white/10 dark:text-white/50";
+            const isExact =
+              !!prediction &&
+              fixture.homeScore != null &&
+              fixture.awayScore != null &&
+              prediction.predictedHome === fixture.homeScore &&
+              prediction.predictedAway === fixture.awayScore;
+            const pointsStyle = isExact
+              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
+              : points > 0
+                ? "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400"
+                : "bg-black/5 text-black/50 dark:bg-white/10 dark:text-white/50";
 
             return (
               <div
@@ -63,6 +68,11 @@ export default async function PredictPage() {
                   <TeamBadge name={fixture.awayTeam} shortName={fixture.awayShortName} crest={fixture.awayCrest} />
                 </div>
                 <div className="flex flex-col items-end gap-1">
+                  {prediction?.isWildcard && (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-500/15 dark:text-amber-400">
+                      Wildcard
+                    </span>
+                  )}
                   <span className={`rounded-full px-2.5 py-1 text-sm font-semibold ${pointsStyle}`}>
                     +{points}
                   </span>
@@ -97,6 +107,7 @@ export default async function PredictPage() {
       locked: roundLocked,
       predictedHome: prediction?.predictedHome ?? null,
       predictedAway: prediction?.predictedAway ?? null,
+      isWildcard: prediction?.isWildcard ?? false,
     };
   });
 
@@ -104,7 +115,8 @@ export default async function PredictPage() {
     <main className="mx-auto max-w-2xl p-8">
       <h1 className="mb-1 text-xl font-bold">{round.label}</h1>
       <p className="mb-4 text-sm text-black/60 dark:text-white/60">
-        Predict each score before kickoff. Exact score = 3 points, correct result = 1 point.
+        Predict each score before kickoff. Exact score = 3 points, correct result = 1 point. Use
+        your wildcard on one game to double its points.
       </p>
       {roundLocked && (
         <p className="mb-6 rounded-lg bg-black/5 px-3 py-2 text-sm font-medium dark:bg-white/10">
