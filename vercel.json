@@ -1,0 +1,6 @@
+{
+  "crons": [
+    { "path": "/api/cron/select-fixtures", "schedule": "0 9 * * 2" },
+    { "path": "/api/cron/update-results", "schedule": "0 9 * * 1" }
+  ]
+}
