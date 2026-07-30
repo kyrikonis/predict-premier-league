@@ -1,3 +1,6 @@
+Written mostly with Claude, this is purely a website to help a family member automate this as they have previously done it manually with friends.
+
+
 # Predict Premier League
 
 A Premier League score-prediction game. Every matchweek, 6 fixtures are picked automatically.
